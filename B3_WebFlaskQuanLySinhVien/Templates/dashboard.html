@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quản Lý Sinh Viên</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Quản Lý Sinh Viên</h2>
+            <a href="{{ url_for('logout') }}" class="btn btn-danger">Đăng xuất</a>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <form id="studentForm">
+                    <div class="row">
+                        <div class="col-md-5">
+                            <input type="text" id="ma_sv" class="form-control" placeholder="Mã sinh viên" required>
+                        </div>
+                        <div class="col-md-5">
+                            <input type="text" id="ho_ten" class="form-control" placeholder="Họ tên" required>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">Thêm</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Mã SV</th>
+                    <th>Họ tên</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody id="studentList"></tbody>
+        </table>
+    </div>
+
+    <script>
+        // Load danh sách sinh viên
+        function loadStudents() {
+            fetch('/api/students')
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.getElementById('studentList');
+                    tbody.innerHTML = '';
+                    data.forEach(student => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${student.ma_sv}</td>
+                                <td>${student.ho_ten}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-warning" onclick="editStudent('${student.ma_sv}', '${student.ho_ten}')">Sửa</button>
+                                    <button class="btn btn-sm btn-danger" onclick="deleteStudent('${student.ma_sv}')">Xóa</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                });
+        }
+
+        // Thêm sinh viên mới
+        document.getElementById('studentForm').onsubmit = function(e) {
+            e.preventDefault();
+            const ma_sv = document.getElementById('ma_sv').value;
+            const ho_ten = document.getElementById('ho_ten').value;
+
+            fetch('/api/students', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ ma_sv, ho_ten })
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadStudents();
+                document.getElementById('studentForm').reset();
+            });
+        };
+
+        // Sửa sinh viên
+        function editStudent(ma_sv, ho_ten) {
+            const newHoTen = prompt('Nhập họ tên mới:', ho_ten);
+            if (newHoTen) {
+                fetch(`/api/students/${ma_sv}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ ho_ten: newHoTen })
+                })
+                .then(response => response.json())
+                .then(data => loadStudents());
+            }
+        }
+
+        // Xóa sinh viên
+        function deleteStudent(ma_sv) {
+            if (confirm('Bạn có chắc muốn xóa sinh viên này?')) {
+                fetch(`/api/students/${ma_sv}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => loadStudents());
+            }
+        }
+
+        // Load danh sách khi trang được tải
+        loadStudents();
+    </script>
+</body>
+</html>
